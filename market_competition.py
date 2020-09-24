@@ -67,10 +67,10 @@ class Producer:
 
         # Producer den mængde der efterspørges
         self.quantity = max(demand, 0)
-        
+
     def observe_demand(self, demand):
         # Opdater overskud i varer (hvor meget blev ikke solgt)
-        excess_supply = max(self.quantity - demand, 0)
+        self.excess_supply = max(self.quantity - demand, 0)
 
 # Et par hjælpefunktioner
 def average(prices):
@@ -90,7 +90,7 @@ def quantities(agents):
 
 # Parametre for simulationen
 num_agents = 2000 # Antal agenter
-iterations = 50 # Antal iterationer
+iterations = 200 # Antal iterationer
 initial_production_quantity = 20 # Alle agenter producerer lige meget
 
 # Opret agenterne
@@ -131,10 +131,16 @@ for t in range(iterations):
 for t in range(iterations):
     print(t, market_price_list[t], production_averages[t])
 
-# Plot
+# Plot markedspris
 plt.title('markedspris vs. tid')
 plt.xlabel('t')
 plt.ylabel('markedspris')
 plt.plot(range(iterations+1), market_price_list, 'm.')
 plt.show()
 
+# Plot produktion
+plt.title('Gennemsnitlig produktion vs. tid')
+plt.xlabel('t')
+plt.ylabel('produktion')
+plt.plot(range(iterations+1), production_averages, 'm.')
+plt.show()
