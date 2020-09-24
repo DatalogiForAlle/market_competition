@@ -1,21 +1,26 @@
 import random
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+
+# Markedsparametre
 
 # Alpha: hvor meget forbrugere vil efterspørge, hvis prisen er nul
-# alpha = 10.5
+alpha = 10.5
 
 # Beta: hældning på demand-kurve, hvor stor effekt prisen på varen har på efterspørgslen
-# beta = 1.75
+beta = 1.75
 
 # Theta: afgører hvilken indflydelse det har at prisen afviger fra markedsgennemsnittet
-# theta = 1.45833
+theta = 1.45833
 
-class Agent:
-    def __init__(self, initial_price, quantity):
+def demand(price, market_price):
+    return alpha - beta * price + theta * market_price
+
+class Producer:
+    def __init__(self, initial_price, initial_production):
         # Initielle værdier
         self.price = initial_price
         self.market_price_forecast = self.price + random.gauss(0, 5)
-        self.quantity = quantity
+        self.quantity = initial_production
         self.excess_supply = 0
 
         # Normalfordelte konstanter (det står ikke i paperet hvordan de er sat)
@@ -36,12 +41,12 @@ class Agent:
         self.coeff_pe = 0.199   # vægtning af forventede markedspris
         self.coeff_S = -0.127  # straf for overskydende varer, der ikke bliver solgt
 
-        # Koefficienter til beregning af efterspørgsel
+        # Koefficienter til beregning af produktion
         self.alpha = 11.812
         self.beta = 1.412
         self.theta = 1.058
 
-    def update_price(self, market_price):
+    def set_price(self, market_price):
         # Forudsig fremtidig markedspris
         self.market_price_forecast = (self.w0 * market_price
                                       + self.w1 * self.market_price_forecast
@@ -53,13 +58,17 @@ class Agent:
                       + self.coeff_S * self.excess_supply
                       + self.u)
 
-    def observe_demand(self):
-        # Beregn efterspørgsel
+    def set_production_level(self):
+        # Forudsig efterspørgsel
         demand = (self.alpha
                   - self.beta * self.price
                   + self.theta * self.market_price_forecast
                   + self.eta)
 
+        # Producer den mængde der efterspørges
+        self.quantity = max(demand, 0)
+        
+    def observe_demand(self, demand):
         # Opdater overskud i varer (hvor meget blev ikke solgt)
         excess_supply = max(self.quantity - demand, 0)
 
@@ -73,39 +82,59 @@ def prices(agents):
         prices.append(agent.price)
     return prices
 
+def quantities(agents):
+    quantities = []
+    for agent in agents:
+        quantities.append(agent.quantity)
+    return quantities
+
 # Parametre for simulationen
 num_agents = 2000 # Antal agenter
 iterations = 50 # Antal iterationer
-quantity_per_round = 20 # Alle agenter producerer lige meget
+initial_production_quantity = 20 # Alle agenter producerer lige meget
 
 # Opret agenterne
 agents = []
 for i in range(num_agents):
     initial_price = random.gauss(15, 2)
-    agent = Agent(initial_price, quantity_per_round)
+    agent = Producer(initial_price, initial_production_quantity)
     agents.append(agent)
 
+# Initiel markedspris
+market_price = average(prices(agents))
+
+# Gem markedspriser og produktions gennemsnit over tid (til plot)
+market_price_list = [market_price]
+production_averages = [initial_production_quantity]
+
 # Kør simulationen
-price_list = []
 for t in range(iterations):
-    # Beregn markedspris
-    market_price = average(prices(agents))
-
-    # Vis nuværende markedspris
-    print(t, market_price)
-
-    # Gem markedspris
-    price_list.append(market_price)
-
-    # Opdater agenterne
+    # Lad agenterne sætte pris og produktionsniveau
     for agent in agents:
-        agent.update_price(market_price)
-        agent.observe_demand()
+        agent.set_price(market_price)
+        agent.set_production_level()
+
+    # Beregn markedspris og gennemsnitlig produktion
+    market_price = average(prices(agents))
+    production_average = average(quantities(agents))
+    
+    # Lad agenter observere faktisk efterspørgsel
+    for agent in agents:
+        d = demand(agent.price, market_price)
+        agent.observe_demand(d)
+
+    # Gem markedspris og gns. produktion til plot
+    market_price_list.append(market_price)
+    production_averages.append(production_average)
+
+# Print resultater
+for t in range(iterations):
+    print(t, market_price_list[t], production_averages[t])
 
 # Plot
-#plt.title('markedspris vs. tid')
-#plt.xlabel('t')
-#plt.ylabel('markedspris')
-#plt.plot(range(iterations), price_list, 'm.')
-#plt.show()
+plt.title('markedspris vs. tid')
+plt.xlabel('t')
+plt.ylabel('markedspris')
+plt.plot(range(iterations+1), market_price_list, 'm.')
+plt.show()
 
