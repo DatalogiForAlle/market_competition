@@ -6,14 +6,14 @@ from scipy.stats import truncnorm
 
 github_url = "https://raw.githubusercontent.com/DatalogiForAlle/market_competition/master"
 
-def get_parameters(mp, param_type = "empirical", num_agents = 0, use_actual_agents = True):
+def get_parameters(mp, agent_type = "empirical", num_agents = 0, use_actual_agents = True):
    
     # -----------------------------------------------------------------------------------------    
     # Her defineres agenter ud fra de estimerede ligninger i artiklen.
     # Man kan vælge om alle grupperne eller blot et subset anvendes. 
     # Hvis only_actual_agents == True, vil man anvende præcis de estimater, der angives i artiklen.
     # Ellers vil man sample et antal svarende til num_agents fra artiklens estimater.  
-    if (param_type == "empirical"):
+    if (agent_type == "empirical"):
 
         # Hent parametre som .csv-filer
         urllib.request.urlretrieve(github_url + "/p_params.csv", "p_params.csv")
@@ -53,7 +53,7 @@ def get_parameters(mp, param_type = "empirical", num_agents = 0, use_actual_agen
     # -----------------------------------------------------------------------------------------    
     # Her defineres agenter som reagerer rationelt. 
     # Dvs. de responderer optimalt givet modellens parametre på den observerede gennemsnitspris    
-    elif (param_type == "best_response"):
+    elif (agent_type == "best_response"):
 
 
         alpha_p = mp['alpha']/(2*mp['beta'])
@@ -83,7 +83,7 @@ def get_parameters(mp, param_type = "empirical", num_agents = 0, use_actual_agen
                     "gamma_3": mp['theta'], 
                     "gamma_4": 0.0}
 
-    elif (param_type == "herding"):
+    elif (agent_type == "herding"):
 
         pe_means = {"c": 0.0,
                     "alpha_1": 0.8,
@@ -105,14 +105,8 @@ def get_parameters(mp, param_type = "empirical", num_agents = 0, use_actual_agen
                     "gamma_3": mp['theta'], 
                     "gamma_4": 0.0}
 
-        # q_means = {"c": 11.0, 
-        #             "gamma_1": 0.0, 
-        #             "gamma_2": -1.4, 
-        #             "gamma_3": 1.0, 
-        #             "gamma_4": 0.0}
-
     else:
-       raise ValueError('get_parameters: Ugyldigt param_type argument')
+       raise ValueError('get_parameters: Ugyldigt agent_type argument')
 
 
     # Standard afvigelser af pris-forventningsparametre er proportionale
@@ -170,6 +164,9 @@ def get_parameters(mp, param_type = "empirical", num_agents = 0, use_actual_agen
     colnames = dict(zip(list(range(len(p_means.keys()))), p_means.keys()))
     p_params = df.rename(columns = colnames)
 
+    # Tilføj type af agent, agent_type
+    p_params['agent_type'] = [agent_type for i in range(p_params.shape[0])]
+
 
     # -----------------------------------
     # Parametre i produktionsbeslutning
@@ -178,7 +175,7 @@ def get_parameters(mp, param_type = "empirical", num_agents = 0, use_actual_agen
     # Trunkeret fordeling
     rnd = truncnorm.rvs(a, b, size = (num_agents, len(q_means)))
 
-    # Reshape data strukturer og anvend gennemsnit + tilfældige stræk til at skabe parametre
+    # Reshape datastrukturer og anvend gennemsnit + tilfældige stræk til at skabe parametre
     means = np.tile(list(q_means.values()), (num_agents, 1))
     stds = np.tile(list(q_stds.values()), (num_agents, 1))
     df = pd.DataFrame(means + rnd*stds)
@@ -186,31 +183,6 @@ def get_parameters(mp, param_type = "empirical", num_agents = 0, use_actual_agen
     # Omdøb kolonner
     colnames = dict(zip(list(range(len(q_means.keys()))), q_means.keys()))
     q_params = df.rename(columns = colnames)
-
-    # pe_means = pe_params[["c", "alpha_1", "alpha_2", "alpha_3"]].mean();
-    # p_means = p_params[["c", "beta_1", "beta_2", "beta_3", "beta_4", "diff_pi", "diff_p"]].mean();
-    # q_means = q_params[["c", "gamma_1", "gamma_2", "gamma_3", "gamma_4"]].mean();
-
-    # pe_stds = pe_params[["c", "alpha_1", "alpha_2", "alpha_3"]].std();
-    # p_stds = p_params[["c", "beta_1", "beta_2", "beta_3", "beta_4", "diff_pi", "diff_p"]].std();
-    # q_stds = q_params[["c", "gamma_1", "gamma_2", "gamma_3", "gamma_4"]].std();
-
-    # std_scale = 0.1
-
-    # pe_sample = [np.random.normal(pe_means[i], pe_stds[i] * std_scale, num_agents) for i in range(len(pe_means))]
-    # pe_sample = pd.DataFrame(pe_sample).T
-    # colnames = dict(zip(list(range(len(pe_means.keys()))), pe_means.keys()))
-    # pe_params = pe_sample.rename(columns = colnames)
-
-    # p_sample = [np.random.normal(p_means[i], p_stds[i] * std_scale, num_agents) for i in range(len(p_means))]
-    # p_sample = pd.DataFrame(p_sample).T
-    # colnames = dict(zip(list(range(len(p_means.keys()))), p_means.keys()))
-    # p_params = p_sample.rename(columns = colnames)
-
-    # q_sample = [np.random.normal(q_means[i], q_stds[i] * std_scale, num_agents) for i in range(len(q_means))]
-    # q_sample = pd.DataFrame(q_sample).T
-    # colnames = dict(zip(list(range(len(q_means.keys()))), q_means.keys()))
-    # q_params = q_sample.rename(columns = colnames)
 
     num_agents = pe_params.shape[0]    
 
@@ -242,6 +214,9 @@ class Producer:
         self.pe = pe
         self.p = p
         self.q = q
+
+        # Hvilken type har producent-agenten (eks. 'best-response', 'herding', ...)
+        self.agent_type = p.agent_type
         
         # Marginal produktionsomkostning
         self.mc = c
@@ -341,18 +316,3 @@ class Producer:
 
         return alpha_p + mp['c']/2 + theta_p*p_bar
          
-        # p_mc = (1/(1-theta_p))*(alpha_p + mp['c']/2)
-
-        # theta_n = (θ*(mp['n']-1))/(2*(mp['n']*mp['beta']-θ))
-        # alpha_n = (mp['alpha']*mp['n'])/(2*(mp['n']*mp['beta']-mp['theta']))
-
-        # p_ne = (1/(1-theta_n))*(alpha_n + mp['c']/2)
-
-
-
-# # Hjælpefunktioner
-# def get_attr(agents, attr):
-#     x = []
-#     for agent in agents:
-#         x.append(getattr(agent, attr))
-#     return x
