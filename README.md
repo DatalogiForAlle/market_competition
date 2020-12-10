@@ -1,4 +1,4 @@
-Agent-baseret simulering af kompetitivt marked
+Agent-baseret simulering af monopolistisk konkurrence
 ----------------------------------------------
 Simulering af markedsmekanisme fra artiklen *PQ strategies in
 monopolistic competition: Some insights from the lab*, by Tiziana
