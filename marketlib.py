@@ -6,7 +6,7 @@ from scipy.stats import truncnorm
 
 github_url = "https://raw.githubusercontent.com/DatalogiForAlle/market_competition/master"
 
-def get_parameters(mp, agent_type = "empirical", num_agents = 0, use_actual_agents = True):
+def get_parameters(mp, agent_type = "empirical", num_agents = 0, std_scale = 0.1, pe_means = {}, p_means = {}, q_means = {}, use_actual_agents = True):
    
     # -----------------------------------------------------------------------------------------    
     # Her defineres agenter ud fra de estimerede ligninger i artiklen.
@@ -64,64 +64,68 @@ def get_parameters(mp, agent_type = "empirical", num_agents = 0, use_actual_agen
         # (Denne funktion ligger implicit i p_means) 
         # p_br = lambda p_bar: alpha_p + mp['c']/2 + theta_p*p_bar
 
-        pe_means = {"c": 0.0,
-                    "alpha_1": 0.8,
-                    "alpha_2": 0.2,
-                    "alpha_3": 0.0}
+        if len(pe_means) == 0:  
+            pe_means = {"c": 0.0,
+                        "alpha_1": 0.5,
+                        "alpha_2": 0.5,
+                        "alpha_3": 0.0}
 
-        p_means = {"c": c_p, 
-                    "beta_1": 0.0, 
-                    "beta_2": theta_p, 
-                    "beta_3": 0.0, 
-                    "beta_4": 0.0, 
-                    "diff_pi": 0.0, 
-                    "diff_p": 0.0}
+        if len(p_means) == 0:
+            p_means = {"c": c_p, 
+                        "beta_1": 0.0, 
+                        "beta_2": theta_p, 
+                        "beta_3": 0.0, 
+                        "beta_4": 0.0, 
+                        "diff_pi": 0.0, 
+                        "diff_p": 0.0}
 
-        q_means = {"c": mp['alpha'], 
-                    "gamma_1": 0.0, 
-                    "gamma_2": -mp['beta'], 
-                    "gamma_3": mp['theta'], 
-                    "gamma_4": 0.0}
+        if len(q_means) == 0:            
+            q_means = {"c": mp['alpha'], 
+                        "gamma_1": 0.0, 
+                        "gamma_2": -mp['beta'], 
+                        "gamma_3": mp['theta'], 
+                        "gamma_4": 0.0}
 
     elif (agent_type == "herding"):
 
-        pe_means = {"c": 0.0,
-                    "alpha_1": 0.8,
-                    "alpha_2": 0.2,
-                    "alpha_3": 0.0}
+        if len(pe_means) == 0:  
+            pe_means = {"c": 0.0,
+                        "alpha_1": 0.5,
+                        "alpha_2": 0.5,
+                        "alpha_3": 0.0}
 
-        p_means = {"c": 0, 
-                    "beta_1": 0.8, 
-                    "beta_2": 0.2, 
-                    "beta_3": 0.0, 
-                    # "beta_4": -0.1,
-                    "beta_4": 0.0, 
-                    "diff_pi": 0.0, 
-                    "diff_p": 0.0}
+        if len(p_means) == 0:
+            p_means = {"c": 0, 
+                        "beta_1": 0.5, 
+                        "beta_2": 0.5, 
+                        "beta_3": 0.0, 
+                        "beta_4": 0.0, 
+                        "diff_pi": 0.0, 
+                        "diff_p": 0.0}
 
-        q_means = {"c": mp['alpha'], 
-                    "gamma_1": 0.0, 
-                    "gamma_2": -mp['beta'], 
-                    "gamma_3": mp['theta'], 
-                    "gamma_4": 0.0}
+        if len(q_means) == 0:    
+            q_means = {"c": mp['alpha'], 
+                        "gamma_1": 0.0, 
+                        "gamma_2": -mp['beta'], 
+                        "gamma_3": mp['theta'], 
+                        "gamma_4": 0.0}
 
     else:
        raise ValueError('get_parameters: Ugyldigt agent_type argument')
 
 
     # Standard afvigelser af pris-forventningsparametre er proportionale
-    scale = 0.1
     pe_stds = dict(pe_means)        
     for j in pe_stds:
-        pe_stds[j] *= scale
+        pe_stds[j] *= std_scale
 
     p_stds = dict(p_means)
     for j in p_stds:
-        p_stds[j] *= scale 
+        p_stds[j] *= std_scale 
 
     q_stds = dict(q_means)
     for j in q_stds:
-        q_stds[j] *= scale 
+        q_stds[j] *= std_scale 
 
 
     # Træk parameterværdier for hver agent fra de definerede fordelinger. 
