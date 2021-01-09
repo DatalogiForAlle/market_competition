@@ -194,7 +194,7 @@ def get_parameters(mp, agent_type = "empirical", num_agents = 0, std_scale = 0.1
 
 # Agent class
 class Producer:
-    def __init__(self, initial_price, initial_production, endowment, c, pe, p, q):
+    def __init__(self, initial_price, initial_production, endowment, c, pe, p, q, epsilon = 0, u = 0, eta = 0):
         # Initiale værdier
         self.price = initial_price
         self.price_t1 = initial_price # pris ved t-1
@@ -210,9 +210,9 @@ class Producer:
         self.price_adjustment = 0 # Pi i paperet
 
         # Vi sætter konstanterne epsilon, u, eta til 0 (paperet fortæller ikke hvordan de er sat)
-        self.epsilon = random.gauss(0, 0.001)
-        self.u = random.gauss(0, 0.001)
-        self.eta = random.gauss(0, 0.001)
+        self.epsilon = epsilon
+        self.u = u
+        self.eta = eta
 
         # Koefficienter for agenten baseret på estimater
         self.pe = pe
@@ -239,7 +239,7 @@ class Producer:
                                       + self.pe.alpha_1 * market_price_t1
                                       + self.pe.alpha_2 * self.market_price_forecast
                                       + self.pe.alpha_3 * market_price_t2
-                                      + self.epsilon)
+                                      + random.gauss(0, self.epsilon))
 
         # Opdater historiske priser
         self.price_t2 = self.price_t1
@@ -251,7 +251,7 @@ class Producer:
                       + self.p.beta_2 * self.market_price_forecast
                       + self.p.beta_3 * self.price_adjustment
                       + self.p.beta_4 * self.excess_supply
-                      + self.u)
+                      + random.gauss(0, self.u))
 
     def set_production_level(self):
         if self.bankrupt:
@@ -264,7 +264,7 @@ class Producer:
                             + self.q.gamma_2 * self.price
                             + self.q.gamma_3 * self.market_price_forecast
                             + self.q.gamma_4 * self.excess_supply
-                            + self.eta)
+                            + random.gauss(0, self.eta))
 
         # Producer den mængde vi forventer der efterspørges
         self.quantity = max(estimated_demand, 0)
