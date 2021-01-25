@@ -203,6 +203,7 @@ class Producer:
         self.market_price_forecast = self.price
         self.quantity = initial_production
         self.excess_supply = 0
+        self.sold_goods = 0
         
         self.profit = 0
         self.profit_t1 = 0 # profit t-1
@@ -272,12 +273,18 @@ class Producer:
     def observe_demand(self, demand):
         if self.bankrupt:
             self.excess_supply = np.nan
+            self.sold_goods = np.nan
             return
         
         # Opdater overskud i varer (hvor meget blev ikke solgt)
-        self.excess_supply = max(self.quantity - demand, 0)
+        self.sold_goods = min(self.quantity, demand)
+        excess_supply = self.quantity - self.sold_goods
+
+        # Pt muligt med negativ excess supply. Kan rettes.
+        self.excess_supply = excess_supply 
+        # self.excess_supply = max(self.excess_supply, 0)
     
-    def calculate_profit(self, demand):
+    def calculate_profit(self):
         if self.bankrupt:
             self.profit = np.nan
             return
@@ -287,7 +294,7 @@ class Producer:
         self.profit_t1 = self.profit
 
         # Beregn profit i denne periode
-        self.profit = self.price*demand - self.mc*self.quantity
+        self.profit = self.price*self.sold_goods - self.mc*self.quantity
         
         # Opdater balance
         self.balance += self.profit
