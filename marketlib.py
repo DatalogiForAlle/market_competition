@@ -277,12 +277,15 @@ class Producer:
             return
         
         # Opdater overskud i varer (hvor meget blev ikke solgt)
-        self.sold_goods = min(self.quantity, demand)
-        excess_supply = self.quantity - self.sold_goods
+        # self.sold_goods = min(self.quantity, demand)
+        
+        # Her er excess supply forskel mellem produktion og solgt mængde. Kan kun være positiv. 
+        # self.excess_supply = self.quantity - self.sold_goods
 
-        # Pt muligt med negativ excess supply. Kan rettes.
-        self.excess_supply = excess_supply 
-        # self.excess_supply = max(self.excess_supply, 0)
+        # Her er excess supply defineret som forskel mellem produktion og efterspørgsel (ikke den faktisk solgte mængde). 
+        # Kan derfor både være positiv og negativ. 
+        self.excess_supply = self.quantity - demand
+
     
     def calculate_profit(self):
         if self.bankrupt:
