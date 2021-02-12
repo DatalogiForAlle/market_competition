@@ -277,7 +277,7 @@ class Producer:
             return
         
         # Opdater overskud i varer (hvor meget blev ikke solgt)
-        # self.sold_goods = min(self.quantity, demand)
+        self.sold_goods = min(self.quantity, demand)
         
         # Her er excess supply forskel mellem produktion og solgt mængde. Kan kun være positiv. 
         # self.excess_supply = self.quantity - self.sold_goods
