@@ -53,7 +53,7 @@ def get_parameters(mp, agent_type = "empirical", num_agents = 0, std_scale = 0.1
     # -----------------------------------------------------------------------------------------    
     # Her defineres agenter som reagerer rationelt. 
     # Dvs. de responderer optimalt givet modellens parametre på den observerede gennemsnitspris    
-    elif (agent_type == "best_response"):
+    elif (agent_type == "profit_seeking"):
 
 
         alpha_p = mp['alpha']/(2*mp['beta'])
